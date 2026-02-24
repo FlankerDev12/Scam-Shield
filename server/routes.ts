@@ -4,6 +4,15 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { analyzeMessage } from "./analyzer";
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  },
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -14,17 +23,62 @@ export async function registerRoutes(
     try {
       const input = api.analyze.input.parse(req.body);
       const result = await analyzeMessage(input.message);
-      
-      // Log the scan without storing PII/message
       await storage.logScan(result.riskScore, result.riskCategory);
-      
       res.status(200).json(result);
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });
       }
-      console.error(err);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post(api.chat.createConversation.path, async (req, res) => {
+    try {
+      const { title } = req.body;
+      const conv = await storage.createConversation(title || "Scan Analysis Follow-up");
+      res.status(201).json(conv);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  app.get(api.chat.getHistory.path, async (req, res) => {
+    try {
+      const history = await storage.getMessages(Number(req.params.id));
+      res.json(history);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch history" });
+    }
+  });
+
+  app.post(api.chat.sendMessage.path, async (req, res) => {
+    try {
+      const conversationId = Number(req.params.id);
+      const { content } = req.body;
+
+      // Save user message
+      await storage.createMessage(conversationId, "user", content);
+
+      // Get history for context
+      const history = await storage.getMessages(conversationId);
+      const contents = history.map(h => ({
+        role: h.role === "user" ? "user" : "model",
+        parts: [{ text: h.content }]
+      }));
+
+      // Generate response
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent({ contents });
+      const response = await result.response;
+      const aiText = response.text();
+
+      // Save AI response
+      const aiMsg = await storage.createMessage(conversationId, "model", aiText);
+      res.json(aiMsg);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "AI response failed" });
     }
   });
 
