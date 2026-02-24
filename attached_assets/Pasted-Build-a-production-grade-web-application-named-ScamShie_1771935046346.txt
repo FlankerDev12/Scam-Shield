@@ -1,0 +1,394 @@
+Build a production-grade web application named:
+
+🛡 ScamShield AI Pro
+
+Hybrid Heuristic + Gemini AI Scam Detection System
+Designed with Apple-style Premium Minimal UI
+
+🎯 CORE FUNCTIONALITY
+
+The application must:
+
+Accept ONLY ONE input field (full message text)
+
+Automatically extract:
+
+URLs
+
+₹ amounts
+
+UPI IDs
+
+Phone numbers
+
+Brand names
+
+Run:
+
+Heuristic detection
+
+Brand spoof detection
+
+Financial anomaly detection
+
+Grammar detection
+
+Gemini AI contextual analysis
+
+Combine results using hybrid scoring
+
+Output:
+
+Final Risk Score (0–100)
+
+Risk Category
+
+AI reasoning
+
+AI confidence
+
+Scam type
+
+Extracted components
+
+No separate link or amount inputs.
+
+🧠 ARCHITECTURE
+
+Backend: Python (Flask)
+Frontend: Clean custom HTML + CSS (no heavy frameworks)
+
+Project structure:
+
+app.py
+
+extractor.py
+
+manipulation_detector.py
+
+grammar_analyzer.py
+
+link_checker.py
+
+financial_detector.py
+
+brand_spoof_detector.py
+
+gemini_classifier.py
+
+risk_engine.py
+
+templates/index.html
+
+static/style.css
+
+🔍 EXTRACTION LAYER
+
+Automatically detect:
+
+URLs via regex
+
+₹ amounts
+
+UPI IDs
+
+Phone numbers
+
+Brand mentions
+
+Return structured dictionary.
+
+🔥 HEURISTIC ENGINE
+Psychological Manipulation
+
+Detect:
+
+Urgency words
+
+Fear triggers
+
+Authority impersonation
+
+Financial pressure
+
+If urgency + fear + authority:
+→ +40
+
+Link Intelligence
+
+For each extracted URL:
+
+Suspicious TLD (.xyz, .top, .ru, .click) → +30
+
+IP-based URL → +30
+
+Multiple hyphens → +15
+
+Very long domain → +15
+
+Non-HTTPS → +10
+
+Brand Spoof Detection
+
+Maintain official domain dictionary:
+
+official_domains = {
+    "SBI": ["sbi.co.in"],
+    "HDFC": ["hdfcbank.com"],
+    "ICICI": ["icicibank.com"],
+    "Amazon": ["amazon.in", "amazon.com"]
+}
+
+If message mentions brand
+AND extracted URL does not match official domain
+→ +30
+
+Financial Manipulation
+
+Verification fee language + amount → +25
+
+Large abnormal formatting → +20
+
+Multiple comma irregularities → +15
+
+Grammar Detection
+
+Excessive punctuation
+
+ALL CAPS
+
+Obvious grammar issues
+
+Repeated urgency words
+
+Grammar max contribution = 15%.
+
+Grammar alone must not classify as scam.
+
+🤖 GEMINI AI INTEGRATION
+
+Install:
+
+pip install google-generativeai
+
+Create gemini_classifier.py:
+
+Read GEMINI_API_KEY from environment variable
+
+Use model: gemini-1.5-flash
+
+Send structured prompt:
+
+You are a cybersecurity AI specialized in scam detection.
+
+Analyze the following message and determine if it is a scam.
+
+Return ONLY valid JSON:
+{
+"risk_score": number (0-100),
+"reasoning": "short explanation",
+"confidence": "Low/Medium/High",
+"scam_type": "type of scam or None"
+}
+
+Message:
+<user_message>
+
+Parse JSON safely.
+
+Wrap in try/except.
+
+If Gemini fails:
+Return None (fallback mode).
+
+⚖ HYBRID SCORING
+
+If Gemini available:
+
+Final Score =
+(Heuristic Score * 0.6) + (AI Score * 0.4)
+
+If Gemini unavailable:
+Final Score = Heuristic Score
+
+🚨 OVERRIDE LOGIC
+
+If:
+
+Suspicious TLD
+AND
+
+Brand impersonation
+AND
+
+Financial request
+
+→ Force Final Score ≥ 80
+
+If no red flags:
+Cap score below 30.
+
+Obvious scams must never return Safe.
+
+📊 RISK CATEGORIES
+
+0–30 → Safe
+31–60 → Suspicious
+61–100 → High Scam Risk
+
+Return:
+
+Final Score
+
+Risk Category
+
+AI reasoning
+
+AI confidence
+
+Scam type
+
+🍎 APPLE-STYLE PREMIUM UI DESIGN
+
+The interface must feel like Apple.com.
+
+Design principles:
+
+Large white space
+
+Soft shadows
+
+Rounded corners (16–20px)
+
+Smooth transitions
+
+Thin modern typography (Inter font)
+
+Soft gray palette (#f5f5f7 background)
+
+Minimal color usage
+
+Subtle glassmorphism cards
+
+Smooth hover animations
+
+🧱 Layout
+1️⃣ Hero Section
+
+Centered:
+
+ScamShield AI Pro
+Subtitle:
+“Intelligent Scam Detection. Powered by Hybrid AI.”
+
+Large elegant input box.
+
+Minimal rounded Analyze button with smooth animation.
+
+2️⃣ Risk Display
+
+After analysis:
+
+Large animated circular risk indicator.
+
+Color scheme:
+
+Safe → Soft green (#34c759)
+
+Suspicious → Amber (#ff9f0a)
+
+High Risk → Elegant red (#ff3b30)
+
+Smooth animated percentage counter.
+
+3️⃣ Analysis Cards
+
+Minimal floating cards:
+
+Heuristic Analysis
+
+Brand & Link Intelligence
+
+AI Contextual Analysis
+
+Soft shadow.
+Glass blur.
+Smooth fade-in animation.
+
+4️⃣ AI Reasoning Section
+
+Expandable panel.
+
+Show:
+
+AI confidence
+
+Scam type
+
+AI explanation
+
+5️⃣ Footer
+
+Minimal:
+
+“No data is stored. Analysis runs securely.”
+
+🎬 MICRO INTERACTIONS
+
+Smooth fade-in on results
+
+Button press animation
+
+Card hover lift effect
+
+Loading spinner animation
+
+Smooth transitions (0.3s ease)
+
+📱 RESPONSIVE
+
+Must look elegant on desktop and mobile.
+
+⚙ STABILITY
+
+No crashes
+
+Handle empty input
+
+Graceful Gemini fallback
+
+Fast response
+
+Clean error handling
+
+📘 README MUST INCLUDE
+
+Problem statement
+
+Architecture explanation
+
+Hybrid scoring explanation
+
+Brand spoof logic
+
+Gemini integration explanation
+
+Apple-style UI philosophy
+
+Demo instructions
+
+IMPORTANT
+
+Prioritize:
+
+Strong logic
+
+Clean override rules
+
+Professional UI polish
+
+Stable Gemini integration
+
+No obvious scam marked Safe
+
+Build complete runnable premium-quality application.
