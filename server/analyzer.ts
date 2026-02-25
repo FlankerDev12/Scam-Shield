@@ -1,12 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
-});
+// Use the API key provided by the user or from environment variables
+const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyBMD8-UnWKE6jjfSq1lfMqYO9mu1v3djlI";
 
 const official_domains: Record<string, string[]> = {
   "SBI": ["sbi.co.in", "onlinesbi.sbi"],
@@ -99,8 +94,10 @@ export async function analyzeMessage(message: string) {
   let scamType = "None";
   let aiAvailable = false;
 
-  try {
-    const prompt = `You are a cybersecurity AI specialized in scam detection. Analyze the message and return ONLY JSON:
+  if (geminiKey) {
+    try {
+      const ai = new GoogleGenAI(geminiKey);
+      const prompt = `You are a cybersecurity AI specialized in scam detection. Analyze the message and return ONLY JSON:
 {
 "risk_score": number (0-100),
 "reasoning": "short explanation",
@@ -109,20 +106,21 @@ export async function analyzeMessage(message: string) {
 }
 Message: ${message}`;
 
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let text = response.text() || "{}";
-    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-    const aiData = JSON.parse(text);
-    
-    aiScore = aiData.risk_score || 0;
-    reasoning = aiData.reasoning || "Analyzed by AI.";
-    confidence = aiData.confidence || "Medium";
-    scamType = aiData.scam_type || "None";
-    aiAvailable = true;
-  } catch (err) {
-    console.error("Gemini AI Error:", err);
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      let text = response.text() || "{}";
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      const aiData = JSON.parse(text);
+      
+      aiScore = aiData.risk_score || 0;
+      reasoning = aiData.reasoning || "Analyzed by AI.";
+      confidence = aiData.confidence || "Medium";
+      scamType = aiData.scam_type || "None";
+      aiAvailable = true;
+    } catch (err) {
+      console.error("Gemini AI Error:", err);
+    }
   }
 
   // 4. Hierarchical Scoring Architecture (CRITICAL)

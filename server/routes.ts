@@ -6,13 +6,7 @@ import { z } from "zod";
 import { analyzeMessage } from "./analyzer";
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
-});
+const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyBMD8-UnWKE6jjfSq1lfMqYO9mu1v3djlI";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -68,14 +62,19 @@ export async function registerRoutes(
       }));
 
       // Generate response
-      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent({ contents });
-      const response = await result.response;
-      const aiText = response.text();
+      if (geminiKey) {
+        const ai = new GoogleGenAI(geminiKey);
+        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent({ contents });
+        const response = result.response;
+        const aiText = response.text();
 
-      // Save AI response
-      const aiMsg = await storage.createMessage(conversationId, "model", aiText);
-      res.json(aiMsg);
+        // Save AI response
+        const aiMsg = await storage.createMessage(conversationId, "model", aiText);
+        res.json(aiMsg);
+      } else {
+        res.status(500).json({ message: "AI API key not configured" });
+      }
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "AI response failed" });
