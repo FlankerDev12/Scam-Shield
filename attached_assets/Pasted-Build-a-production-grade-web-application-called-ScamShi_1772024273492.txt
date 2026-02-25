@@ -1,0 +1,291 @@
+Build a production-grade web application called:
+
+🛡 ScamShield AI Pro
+
+AI-Dominant Hybrid Scam Detection System
+
+This version must implement hierarchical security logic, not simple weighted averaging.
+
+🎯 CORE INPUT
+
+The app must use:
+
+ONE single message input box.
+
+Automatically extract URLs, ₹ amounts, UPI IDs, phone numbers, and brand names.
+
+No separate fields.
+
+🧠 DETECTION LAYERS
+1️⃣ Extraction Layer
+
+Extract:
+
+URLs
+
+₹ amounts
+
+UPI IDs
+
+Phone numbers
+
+Brand mentions (SBI, HDFC, ICICI, Amazon, etc.)
+
+2️⃣ Heuristic Detection
+Psychological Manipulation
+
+Detect:
+
+Urgency words
+
+Fear triggers
+
+Authority impersonation
+
+Financial pressure
+
+Link Intelligence
+
+For each URL:
+
+Suspicious TLD (.xyz, .top, .ru, .click)
+
+IP-based URL
+
+Multiple hyphens
+
+Non-HTTPS
+
+Brand Spoof Detection
+
+Maintain official domain dictionary.
+If brand mentioned AND URL does not match official domain:
+→ brand_spoof = True
+
+Financial Manipulation
+
+Detect:
+
+Verification fee language
+
+UPI collect patterns
+
+Suspicious amount formatting
+
+Credential Harvest Detection
+
+Detect keywords:
+
+verify
+
+login
+
+reset
+
+confirm
+
+password
+
+review account
+
+🤖 GEMINI AI INTEGRATION (MANDATORY)
+
+Use google-generativeai library.
+
+Model: gemini-1.5-flash
+
+Prompt Gemini:
+
+You are a cybersecurity AI specialized in scam detection.
+Analyze the message and return ONLY JSON:
+
+{
+"risk_score": number (0-100),
+"reasoning": "short explanation",
+"confidence": "Low/Medium/High",
+"scam_type": "type or None"
+}
+
+Wrap in try/except.
+If API fails, fallback to heuristic-only mode.
+
+🛡 FINAL SCORING ARCHITECTURE (CRITICAL)
+
+DO NOT use pure weighted averaging.
+
+Implement hierarchical scoring:
+
+STEP 1 — Compute heuristic_score
+STEP 2 — Get ai_score + ai_confidence
+STEP 3 — Apply AI Dominance Rule
+
+If:
+
+ai_confidence == "High"
+AND
+
+ai_score >= 70
+
+→ final_score = max(ai_score, heuristic_score)
+
+AI overrides.
+
+STEP 4 — Apply Category Escalation Rules
+Financial Scam Escalation
+
+If:
+
+financial_request
+AND
+
+brand_spoof
+
+→ final_score = max(final_score, 80)
+
+Credential Harvest Escalation
+
+If:
+
+brand_spoof
+AND
+
+credential_keywords detected
+
+→ final_score = max(final_score, 75)
+
+UPI Collect Scam Escalation
+
+If:
+
+UPI collect pattern detected
+
+→ final_score = max(final_score, 85)
+
+Investment Scam Escalation
+
+If:
+
+guaranteed returns language
+
+→ final_score = max(final_score, 85)
+
+STEP 5 — Safe Cap Rule
+
+If:
+
+No suspicious signals
+AND
+
+ai_score < 40
+
+→ final_score = min(final_score, 30)
+
+📊 RISK CATEGORIES
+
+0–30 → Safe
+31–60 → Suspicious
+61–100 → High Risk
+
+Never allow:
+
+Identified scam_type != None
+AND final_score < 60
+
+That is logically inconsistent.
+
+🍎 UI REQUIREMENTS – APPLE STYLE
+
+Design must be minimal and premium.
+
+Large white space
+
+Rounded corners
+
+Soft shadows
+
+Inter font
+
+Subtle gradient background
+
+Animated circular risk indicator
+
+Smooth fade-in transitions
+
+Glass-style cards
+
+Elegant color palette
+
+Show:
+
+Risk score
+
+Risk category
+
+AI confidence
+
+Scam type
+
+AI reasoning
+
+Extracted components
+
+No clutter.
+No heavy frameworks.
+
+⚙ STABILITY REQUIREMENTS
+
+No crashes
+
+Graceful Gemini fallback
+
+Fast response
+
+Clean error handling
+
+Proper JSON parsing
+
+📘 README MUST EXPLAIN
+
+Hierarchical security scoring
+
+AI dominance rule
+
+Escalation matrix
+
+Brand spoof detection
+
+Credential phishing handling
+
+Financial fraud handling
+
+Why weighted averaging is unsafe in cybersecurity
+
+IMPORTANT
+
+This must feel like:
+
+A real cybersecurity product, not a student demo.
+
+Scoring must align with severity.
+
+Explanations must match numerical risk.
+
+Obvious phishing must score 75+.
+UPI collect scam must score 85+.
+Brand spoof + credential must score 75+.
+Legitimate messages must remain below 30.
+
+Build complete runnable application.
+
+END PROMPT
+
+This is your final production-grade architecture.
+
+After implementing this, your system will:
+
+✔ No longer under-score phishing
+✔ No longer mark scams Safe
+✔ Align explanation with severity
+✔ Impress judges technically
+
+Now we’re operating at professional-level security logic.

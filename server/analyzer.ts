@@ -21,7 +21,8 @@ const official_domains: Record<string, string[]> = {
 const urgencyWords = ["urgent", "immediate", "act now", "action required", "within 24 hours", "expires", "suspended", "blocked"];
 const fearTriggers = ["unauthorized login", "compromised", "penalty", "legal action", "arrest", "warrant", "fine", "account suspended"];
 const authorityWords = ["police", "rbi", "bank", "customs", "fedex", "trai", "support", "admin", "manager", "income tax"];
-const financeWords = ["verification fee", "processing fee", "refundable", "send money", "pay now", "transfer"];
+const financeWords = ["verification fee", "processing fee", "refundable", "send money", "pay now", "transfer", "kyc pending", "account verification"];
+const credentialKeywords = ["verify", "login", "reset", "confirm", "password", "review account", "update kyc"];
 
 export async function analyzeMessage(message: string) {
   // 1. Extraction Layer
@@ -45,17 +46,18 @@ export async function analyzeMessage(message: string) {
   const hasFear = fearTriggers.some(w => msgLower.includes(w));
   const hasAuthority = authorityWords.some(w => msgLower.includes(w));
   const hasFinance = financeWords.some(w => msgLower.includes(w));
+  const hasCredentials = credentialKeywords.some(w => msgLower.includes(w));
 
   if (hasUrgency && hasFear && hasAuthority) {
     heuristicScore += 40;
   } else {
-    if (hasUrgency) heuristicScore += 10;
-    if (hasFear) heuristicScore += 10;
-    if (hasAuthority) heuristicScore += 10;
+    if (hasUrgency) heuristicScore += 15;
+    if (hasFear) heuristicScore += 15;
+    if (hasAuthority) heuristicScore += 15;
   }
 
   let hasSuspiciousTld = false;
-  let hasBrandImpersonation = false;
+  let hasBrandSpoof = false;
 
   for (const url of urls) {
     const urlLower = url.toLowerCase();
@@ -69,11 +71,8 @@ export async function analyzeMessage(message: string) {
     if ((urlLower.match(/-/g) || []).length > 2) {
       heuristicScore += 15;
     }
-    if (url.length > 50) {
-      heuristicScore += 15;
-    }
     if (!urlLower.startsWith("https")) {
-      heuristicScore += 10;
+      heuristicScore += 15;
     }
 
     // Brand spoof check
@@ -81,50 +80,39 @@ export async function analyzeMessage(message: string) {
       const domains = official_domains[brand];
       const isOfficial = domains.some(d => urlLower.includes(d));
       if (!isOfficial) {
-        heuristicScore += 30;
-        hasBrandImpersonation = true;
+        heuristicScore += 40;
+        hasBrandSpoof = true;
       }
     }
   }
 
-  if (hasFinance && amounts.length > 0) {
-    heuristicScore += 25;
+  if (hasFinance && (amounts.length > 0 || upiIds.length > 0)) {
+    heuristicScore += 30;
   }
 
-  // Grammar detection
-  let grammarScore = 0;
-  if ((message.match(/[!?]{2,}/g) || []).length > 0) grammarScore += 5;
-  const upperCaseWords = message.split(' ').filter(w => w === w.toUpperCase() && w.length > 3).length;
-  if (upperCaseWords > 3) grammarScore += 5;
-  
-  heuristicScore += Math.min(15, grammarScore);
   heuristicScore = Math.min(100, heuristicScore);
 
   // 3. Gemini AI Analysis
   let aiScore = 0;
   let reasoning = "Heuristic analysis only.";
-  let confidence = "Medium";
-  let scamType = "Unknown";
+  let confidence = "Low";
+  let scamType = "None";
   let aiAvailable = false;
 
   try {
-    const prompt = `You are a cybersecurity AI specialized in scam detection. Analyze the following message and determine if it is a scam.
-Return ONLY valid JSON with exactly this structure:
+    const prompt = `You are a cybersecurity AI specialized in scam detection. Analyze the message and return ONLY JSON:
 {
-  "risk_score": <number 0-100>,
-  "reasoning": "<short explanation>",
-  "confidence": "<Low/Medium/High>",
-  "scam_type": "<type of scam or None>"
+"risk_score": number (0-100),
+"reasoning": "short explanation",
+"confidence": "Low/Medium/High",
+"scam_type": "type or None"
 }
-Message:
-${message}`;
+Message: ${message}`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
-    
-    let text = response.text || "{}";
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text() || "{}";
     text = text.replace(/```json/g, "").replace(/```/g, "").trim();
     const aiData = JSON.parse(text);
     
@@ -137,17 +125,48 @@ ${message}`;
     console.error("Gemini AI Error:", err);
   }
 
-  // 4. Hybrid Scoring
+  // 4. Hierarchical Scoring Architecture (CRITICAL)
   let finalScore = aiAvailable ? (heuristicScore * 0.6) + (aiScore * 0.4) : heuristicScore;
 
-  // Override logic
-  if (hasSuspiciousTld && hasBrandImpersonation && hasFinance) {
+  // AI Dominance Rule
+  if (aiAvailable && confidence === "High" && aiScore >= 70) {
+    finalScore = Math.max(aiScore, heuristicScore);
+  }
+
+  // Escalation Rules
+  const financialRequest = hasFinance || amounts.length > 0 || upiIds.length > 0;
+  
+  // Financial Scam Escalation
+  if (financialRequest && hasBrandSpoof) {
     finalScore = Math.max(finalScore, 80);
   }
-  
-  const noRedFlags = !hasUrgency && !hasFear && !hasFinance && urls.length === 0;
-  if (noRedFlags) {
+
+  // Credential Harvest Escalation
+  if (hasBrandSpoof && hasCredentials) {
+    finalScore = Math.max(finalScore, 75);
+  }
+
+  // UPI Collect Scam Escalation (heuristic pattern)
+  const hasUpiCollect = msgLower.includes("collect") && upiIds.length > 0;
+  if (hasUpiCollect) {
+    finalScore = Math.max(finalScore, 85);
+  }
+
+  // Investment Scam Escalation
+  const hasInvestmentScam = msgLower.includes("guaranteed") && (msgLower.includes("return") || msgLower.includes("profit"));
+  if (hasInvestmentScam) {
+    finalScore = Math.max(finalScore, 85);
+  }
+
+  // Safe Cap Rule
+  const noSuspiciousSignals = !hasUrgency && !hasFear && !hasFinance && urls.length === 0 && !hasBrandSpoof;
+  if (noSuspiciousSignals && aiScore < 40) {
     finalScore = Math.min(finalScore, 30);
+  }
+
+  // Logical Consistency Check
+  if (scamType !== "None" && finalScore < 60) {
+    finalScore = 60;
   }
 
   finalScore = Math.round(Math.min(100, Math.max(0, finalScore)));
