@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FileX, RotateCcw } from "lucide-react";
+import { FileX, RotateCcw, MessageSquare } from "lucide-react";
 import { useAnalyze } from "@/hooks/use-analyze";
 import { AppShell } from "@/components/AppShell";
 import { AnalyzeComposer } from "@/components/AnalyzeComposer";
@@ -8,6 +8,7 @@ import { AnalysisCards } from "@/components/AnalysisCards";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { AIChat } from "@/components/AIChat";
 import type { AnalyzeResponse } from "@shared/schema";
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
 
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const canReset = useMemo(() => !!message.trim() || !!result, [message, result]);
 
@@ -91,6 +93,17 @@ export default function Home() {
 
                     <Button
                       variant="outline"
+                      className="gap-2"
+                      onClick={() => setIsChatOpen(true)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Ask AI
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-auto md:ml-0"
                       onClick={() => {
                         setMessage("");
                         setResult(null);
@@ -99,8 +112,7 @@ export default function Home() {
                       }}
                       disabled={!canReset}
                     >
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      New scan
+                      <RotateCcw className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -145,6 +157,12 @@ export default function Home() {
           </Card>
         )}
       </div>
+
+      <AIChat 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+        initialMessage={result ? `I just scanned a message: "${message.substring(0, 100)}...". It was categorized as ${result.riskCategory}. Can you tell me more about why this is suspicious?` : undefined}
+      />
     </AppShell>
   );
 }
