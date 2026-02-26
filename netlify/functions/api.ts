@@ -93,9 +93,14 @@ let migrationsRan = false;
 const wrappedHandler = serverless(app);
 
 export const handler = async (event: any, context: any) => {
-  if (!migrationsRan) {
-    await runMigrations();
-    migrationsRan = true;
+  try {
+    if (!migrationsRan) {
+      await runMigrations();
+      migrationsRan = true;
+    }
+  } catch (e) {
+    console.error("Migration error:", e);
+    return { statusCode: 500, body: JSON.stringify({ message: "DB migration failed", error: String(e) }) };
   }
   return wrappedHandler(event, context);
 };
