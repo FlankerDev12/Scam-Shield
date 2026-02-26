@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Use the API key provided by the user or from environment variables
-const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyAIpGaqkUHFa5l6_v_4fdICfcOQZwgmkxk";
+const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyC9z8N8cYHKNmiztXR9KN2ihLV4GaZnkzA";
 
 const official_domains: Record<string, string[]> = {
   "SBI": ["sbi.co.in", "onlinesbi.sbi"],

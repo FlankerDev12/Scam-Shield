@@ -6,7 +6,7 @@ import { z } from "zod";
 import { analyzeMessage } from "./analyzer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyAIpGaqkUHFa5l6_v_4fdICfcOQZwgmkxk";
+const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyC9z8N8cYHKNmiztXR9KN2ihLV4GaZnkzA";
 
 export async function registerRoutes(
   httpServer: Server,
