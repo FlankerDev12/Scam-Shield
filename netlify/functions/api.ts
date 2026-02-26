@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import serverless from "serverless-http";
-import { createServer } from "http";
 import { storage } from "../../server/storage";
 import { api } from "../../shared/routes";
 import { z } from "zod";

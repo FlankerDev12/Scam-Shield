@@ -17,9 +17,14 @@ export async function registerRoutes(
     try {
       const input = api.analyze.input.parse(req.body);
       const result = await analyzeMessage(input.message);
-      await storage.logScan(result.riskScore, result.riskCategory);
+      try {
+        await storage.logScan(result.riskScore, result.riskCategory);
+      } catch (dbErr) {
+        console.error("DB logScan error (non-fatal):", dbErr);
+      }
       res.status(200).json(result);
     } catch (err) {
+      console.error("Analyze route error:", err);
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });
       }
