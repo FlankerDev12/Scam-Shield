@@ -3,8 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { runMigrations } from "./db";
 
 const app = express();
 const httpServer = createServer(app);
@@ -64,9 +63,7 @@ app.use((req, res, next) => {
 
 (async () => {
   // Auto-run migrations on startup
-  db.run(sql`CREATE TABLE IF NOT EXISTS scans (id INTEGER PRIMARY KEY AUTOINCREMENT, risk_score INTEGER NOT NULL, risk_category TEXT NOT NULL, created_at INTEGER DEFAULT (unixepoch()))`);
-  db.run(sql`CREATE TABLE IF NOT EXISTS conversations (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT (unixepoch()))`);
-  db.run(sql`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, conversation_id INTEGER NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT (unixepoch()), FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE)`);
+  await runMigrations();
 
   await registerRoutes(httpServer, app);
 
