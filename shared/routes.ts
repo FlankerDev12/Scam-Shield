@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { analyzeRequestSchema, analyzeResponseSchema, insertConversationSchema, insertMessageSchema } from "./schema";
+import { analyzeRequestSchema, analyzeResponseSchema, insertConversationSchema, insertMessageSchema, type AnalyzeRequest, type AnalyzeResponse } from "./schema";
 
 export const api = {
   analyze: {
@@ -41,6 +41,8 @@ export const api = {
     }
   }
 };
+
+export type { AnalyzeRequest, AnalyzeResponse };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
   let url = path;

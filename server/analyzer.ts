@@ -1,7 +1,7 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Use the API key provided by the user or from environment variables
-const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyBMD8-UnWKE6jjfSq1lfMqYO9mu1v3djlI";
+const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyAIpGaqkUHFa5l6_v_4fdICfcOQZwgmkxk";
 
 const official_domains: Record<string, string[]> = {
   "SBI": ["sbi.co.in", "onlinesbi.sbi"],
@@ -21,7 +21,8 @@ const credentialKeywords = ["verify", "login", "reset", "confirm", "password", "
 
 export async function analyzeMessage(message: string) {
   // 1. Extraction Layer
-  const urls = message.match(/(https?:\/\/[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g) || [];
+  const rawUrls = message.match(/(https?:\/\/[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g) || [];
+  const urls = rawUrls.map((url) => url.replace(/[\]\)\}\.,;]+$/g, ""));
   const amounts = message.match(/(?:₹|Rs\.?|INR)\s*[\d,]+(?:\.\d{1,2})?|[\d,]+(?:\.\d{1,2})?\s*(?:INR|rupees)/gi) || [];
   const upiIds = message.match(/[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}/g) || [];
   const phones = message.match(/(?:\+?91|0)?[ -]*[6-9][0-9]{9}/g) || [];
@@ -53,21 +54,30 @@ export async function analyzeMessage(message: string) {
 
   let hasSuspiciousTld = false;
   let hasBrandSpoof = false;
+  let hasSuspiciousUrl = false;
 
   for (const url of urls) {
     const urlLower = url.toLowerCase();
-    if (urlLower.match(/\.(xyz|top|ru|click|vip|online)$/)) {
+    if (urlLower.match(/\.(xyz|top|ru|click|vip|online|help|info|live|pw|cc|tk|ml|ga|cf)$/)) {
       heuristicScore += 30;
       hasSuspiciousTld = true;
+      hasSuspiciousUrl = true;
     }
     if (urlLower.match(/https?:\/\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)) {
       heuristicScore += 30;
+      hasSuspiciousUrl = true;
     }
     if ((urlLower.match(/-/g) || []).length > 2) {
       heuristicScore += 15;
+      hasSuspiciousUrl = true;
     }
     if (!urlLower.startsWith("https")) {
       heuristicScore += 15;
+    }
+    // Suspicious keywords in URL path
+    if (urlLower.match(/\/(login|verify|update|secure|account|confirm|reset|kyc|payment|refund|reward)/)) {
+      heuristicScore += 20;
+      hasSuspiciousUrl = true;
     }
 
     // Brand spoof check
@@ -79,6 +89,15 @@ export async function analyzeMessage(message: string) {
         hasBrandSpoof = true;
       }
     }
+  }
+
+  // Suspicious URL present alongside fear/urgency/authority signals
+  if (hasSuspiciousUrl && (hasUrgency || hasFear || hasAuthority || hasCredentials)) {
+    heuristicScore += 20;
+  }
+
+  if (urls.length > 0) {
+    heuristicScore += 5;
   }
 
   if (hasFinance && (amounts.length > 0 || upiIds.length > 0)) {
@@ -96,7 +115,7 @@ export async function analyzeMessage(message: string) {
 
   if (geminiKey) {
     try {
-      const ai = new GoogleGenAI(geminiKey);
+      const ai = new GoogleGenerativeAI(geminiKey);
       const prompt = `You are a cybersecurity AI specialized in scam detection. Analyze the message and return ONLY JSON:
 {
 "risk_score": number (0-100),
@@ -106,20 +125,33 @@ export async function analyzeMessage(message: string) {
 }
 Message: ${message}`;
 
-      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
       const result = await model.generateContent(prompt);
       const response = result.response;
       let text = response.text() || "{}";
       text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      const aiData = JSON.parse(text);
+      const match = text.match(/\{[\s\S]*\}/);
+      const jsonText = match ? match[0] : text;
+      const aiData = JSON.parse(jsonText);
       
       aiScore = aiData.risk_score || 0;
       reasoning = aiData.reasoning || "Analyzed by AI.";
       confidence = aiData.confidence || "Medium";
       scamType = aiData.scam_type || "None";
       aiAvailable = true;
-    } catch (err) {
-      console.error("Gemini AI Error:", err);
+    } catch (err: any) {
+      if (err?.status === 429) {
+        reasoning = "AI quota exceeded – heuristic analysis used.";
+        console.warn("Gemini quota exceeded, using heuristic only.");
+      } else if (err?.status === 404) {
+        reasoning = "AI model unavailable – heuristic analysis used.";
+        console.warn("Gemini model not available for this API key.");
+      } else if (err?.status === 401 || err?.status === 403) {
+        reasoning = "AI unavailable – invalid API key.";
+        console.warn("Gemini API key invalid or unauthorized.");
+      } else {
+        console.error("Gemini AI Error:", err?.message || err);
+      }
     }
   }
 
@@ -157,7 +189,7 @@ Message: ${message}`;
   }
 
   // Safe Cap Rule
-  const noSuspiciousSignals = !hasUrgency && !hasFear && !hasFinance && urls.length === 0 && !hasBrandSpoof;
+  const noSuspiciousSignals = !hasUrgency && !hasFear && !hasFinance && urls.length === 0 && !hasBrandSpoof && !hasSuspiciousUrl && !hasSuspiciousTld;
   if (noSuspiciousSignals && aiScore < 40) {
     finalScore = Math.min(finalScore, 30);
   }

@@ -4,9 +4,9 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { analyzeMessage } from "./analyzer";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyBMD8-UnWKE6jjfSq1lfMqYO9mu1v3djlI";
+const geminiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "AIzaSyAIpGaqkUHFa5l6_v_4fdICfcOQZwgmkxk";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -63,8 +63,8 @@ export async function registerRoutes(
 
       // Generate response
       if (geminiKey) {
-        const ai = new GoogleGenAI(geminiKey);
-        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const ai = new GoogleGenerativeAI(geminiKey);
+        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
         const result = await model.generateContent({ contents });
         const response = result.response;
         const aiText = response.text();

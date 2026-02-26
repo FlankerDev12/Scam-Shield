@@ -82,8 +82,8 @@ export function AIChat({ isOpen, onClose, initialMessage }: AIChatProps) {
           </Button>
         </div>
 
-        <ScrollArea className="flex-1 p-4" viewportRef={scrollRef}>
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4" ref={scrollRef}>
             {messages.length === 0 && !isLoadingHistory && (
               <div className="flex flex-col items-center justify-center py-10 text-center opacity-50">
                 <Bot className="mb-2 h-10 w-10" />
